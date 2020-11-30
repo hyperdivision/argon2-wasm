@@ -36,13 +36,446 @@
 
 (func (export "argon2_init") (param $ptr i32) (param $memory i32) (param $tag_length i32) (param $iterations i32)
     ;; b array: 0-128
-    (i32.store offset=0 (get_local $ptr) (get_local $memory))
-    (i32.store offset=4 (get_local $ptr) (i32.const 1))
-    (i32.store offset=8 (get_local $ptr) (get_local $tag_length))
+    (i32.store offset=0 (get_local $ptr) (i32.const 1))
+    (i32.store offset=4 (get_local $ptr) (get_local $tag_length))
+    (i32.store offset=8 (get_local $ptr) (get_local $memory))
     (i32.store offset=12 (get_local $ptr) (get_local $iterations))
-    (i64.store offset=16 (get_local $ptr) (i64.const 0))
+    (i32.store offset=16 (get_local $ptr) (i32.const 0x10))
 
-    ;; pseudo_rands
+    ;; pseudo_rands 32..1056
+    (call $init_block (i32.add (get_local $ptr) (i32.const 32)))
+    
+    ;; input_block  1056..2080
+    (call $init_block (i32.add (get_local $ptr) (i32.const 1056)))
+    ;; lane
+    (i64.store offset=8  (i32.const 1056) (i64.const 1))
+    ;; memory blocks
+    (i32.store offset=28 (i32.const 1056) (get_local $memory))
+    ;; passes
+    (i32.store offset=36 (i32.const 1056) (get_local $iterations))
+    ;; type: starts as 1 -> argon2i
+    (i32.store offset=44 (i32.const 1056) (i32.const 1))
+    ;; initialise counter
+    (i64.store offset=48 (i32.const 1056) (i64.const 0))
+    
+    ;; tmp block  2080..3104
+    (call $init_block (i32.add (get_local $ptr) (i32.const 2080)))
+    
+    ;; zero block  3104..4128
+    (call $init_block (i32.add (get_local $ptr) (i32.const 3104)))
+
+    ;; H0 string 4128..4192
+    (i64.store offset=4128 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4136 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4144 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4152 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4160 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4168 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4176 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4184 (get_local $ctx) (i64.const 0))
+
+    (i64.store offset=4192 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4200 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4208 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4216 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4224 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4232 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4240 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4248 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4256 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4264 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4272 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4280 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4288 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4296 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4304 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4312 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4320 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4328 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4336 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4344 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4352 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4360 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4368 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4376 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4384 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4392 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4400 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4408 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4416 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4424 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4432 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4440 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4448 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4456 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4464 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4472 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4480 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4488 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4496 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4504 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4512 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4520 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4528 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4536 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4544 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4552 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4560 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4568 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4576 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4584 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4592 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4600 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4608 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4616 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4624 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4632 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4640 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4648 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4656 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4664 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4672 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4680 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4688 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4696 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4704 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4712 (get_local $ctx) (i64.const 0))
+    (i64.store offset=4720 (get_local $ctx) (i64.const 0))
+    )
+
+  (func $initial_hash (param $ctx i32) (param $input i32) (param $input_len i32)
+    (local $hash_ctx i32)
+    
+    (get_local $ctx)
+    (i32.const 4192)
+    (i32.add)
+    (set_local $hash_ctx)
+
+    (call $blake2b_init (get_local $hash_ctx))
+    (call $blake2b_update (get_local $hash_ctx) (get_local $ctx) (i32.add (i32.const 24 (get_local $ctx))))
+    (call $blake2b_update (get_local $hash_ctx) (get_local $input) (get_local $inpt))
+    (call $blake2b_final (get_local $ctx))
+
+    (i64.store offset=4128 (get_local $ctx) (i64.load offset=128 (get_local $hash_ctx)))
+    (i64.store offset=4136 (get_local $ctx) (i64.load offset=136 (get_local $hash_ctx)))
+    (i64.store offset=4144 (get_local $ctx) (i64.load offset=144 (get_local $hash_ctx)))
+    (i64.store offset=4152 (get_local $ctx) (i64.load offset=152 (get_local $hash_ctx)))
+    (i64.store offset=4160 (get_local $ctx) (i64.load offset=160 (get_local $hash_ctx)))
+    (i64.store offset=4168 (get_local $ctx) (i64.load offset=168 (get_local $hash_ctx)))
+    (i64.store offset=4176 (get_local $ctx) (i64.load offset=176 (get_local $hash_ctx)))
+    (i64.store offset=4184 (get_local $ctx) (i64.load offset=184 (get_local $hash_ctx))))
+
+  (func $generate_addresses (param $ctx i32) (param $pass i32) (param $slice i32)
+    (local $memory_blocks i32)
+    (local $passes i32)
+    (local $type i32)
+
+    (local $zero_block i32)
+    (local $tmp_block i32)
+    (local $input_block i32)
+    (local $pseudo_rands i32)
+
+    (set_local $pseudo_rand_block (i32.add (get_local $ctx (i32.const 32))))
+    (set_local $input_block (i32.add (get_local $ctx (i32.const 1056))))
+    (set_local $tmp_block (i32.add (get_local $ctx (i32.const 2080))))
+    (set_local $zero_block (i32.add (get_local $ctx (i32.const 3104))))
+
+    (i32.load offset=4 (get_local $input_block))
+    (get_local $pass)
+    (i32.ne)
+    (if (then
+      (get_local $input)
+      (i64.const 0)
+      (i64.store offset=48)))
+
+    (i32.load offset=0 (get_local $ctx))
+    (set_local $memory_blocks)
+
+    (i32.load offset=12 (get_local $ctx))
+    (set_local $passes)
+
+    (i32.load offset=16 (get_local $ctx))
+    (set_local $type)
+
+    (i32.store offset=4 (get_local $pass) (get_local $input_block))
+    (i32.store offset=20 (get_local $slice) (get_local $input_block))
+
+    ;; increment counter
+    (get_local $input_block)
+    (get_local $input_block)
+    (i64.load offset=48)
+    (i64.const 1)
+    (i64.add)
+    (i64.store offset=48)
+
+    (call $fill_block (get_local $zero_block) (get_local $input_block) (get_local $tmp_block))
+    (call $fill_block (get_local $zero_block) (get_local $tmp_block) (get_local $pseudo_rands)))
+
+  (func $fill_memory_blocks (param $ctx i32) (param $pass i32)
+    (local $segment i32)
+
+    (i32.const 0)
+    (set_local $segment)
+
+    (block $end
+      (loop $next_segment
+        (get_local $segment)
+        (i32.const 4)
+        (i32.eq)
+        (br_if $end)
+
+        (get_local $ctx)
+        (i32.load offset=0 (get_local $ctx))
+        (i32.const 4)
+        (i32.div_u)
+        (get_local $segment)
+        (i32.mul)
+        (get_local $segment)
+        (call $fill_segment)
+        
+        (get_local $segment)
+        (i32.const 1)
+        (i32.add)
+        (set_local $segment)
+        (br $next_segment))))
+
+  (func $fill_initial_blocks (param $h0 i32) (param $memory i32)
+    (call $blake2b_long)
+    (i32.const 0)
+    (i32.store (i32.const 0) (i32.add (get_local $h0) (i32.const 64)))
+    (i32.store (i32.const 1) (i32.add (get_local $h0) (i32.const 68)))
+    
+    (get_local $h0)
+    (i32.add (get_local $h0) (i32.const 72))
+    (i32.const 1024)
+    (get_local $memory)
+    (call $blake2b_long)
+
+    (i32.store (i32.const 1) (i32.add (get_local $h0) (i32.const 64)))
+    (i32.store (i32.const 1) (i32.add (get_local $h0) (i32.const 68)))
+    
+    (get_local $h0)
+    (i32.add (get_local $h0) (i32.const 72))
+    (i32.const 1024)
+    (i32.add (i32.const 1024) (get_local $memory))
+    (call $blake2b_long))
+
+  (func $relative_position (param $pseudo_rand i64) (param $area i64)
+    (result i32)
+
+    (local $j1 i64)
+    (local $j2 i64)
+    
+    (local $next_index i64)
+
+    (get_local $pseudo_rand)
+    (i64.const 32)
+    (i64.shr_u)
+    (set_local $j1)
+
+    (get_local $pseudo_rand)
+    (i64.const 0xffffffff)
+    (i64.and)
+    (set_local $j2)
+
+    (set_local $next_index (i64.shr_u (i64.mul (get_local $j1) (get_local $j1)) (i64.const 32)))
+    (set_local $next_index (i64.shr_u (i64.mul (get_local $area) (get_local $next_index)) (i64.const 32)))
+    (tee_local $next_index (i64.sub (i64.sub (get_local $area) (i64.const 1)) (get_local $next_index)))
+    (i32.wrap/i64))
+
+  (func $reference_block_pos (param $lane_length i32) (param $pos i32) (param $pass i32) (param $pseudo_rand i64)
+    (result i32)
+
+    (local $start_pos i32)
+    (local $area i32)
+    (local $segment_length i32)
+
+    (get_local $lane_length)
+    (i32.const 2)
+    (i32.shr_u)
+    (set_local $segment_length)
+
+    (set_local $start_pos (i32.const 0))
+
+    ;; second pass
+    (get_local $pass)
+    (i32.const 0)
+    (i32.ne)
+    (if (then
+        (get_local $pos)
+        (get_local $segment_length)
+        (i32.div_u)
+        (i32.const 1)
+        (i32.add)
+        (i32.const 4)
+        (i32.rem_u)
+        (get_local $segment_length)
+        (i32.mul)
+        (set_local $start_pos)))
+
+    (block $fi
+        ;; if (poss === 0 && pass === 0) : CHECK poss + pass === 0, add assertion for edge case?
+        (get_local $pos)
+        (get_local $pass)
+        (i32.add)
+        (i32.const 0)
+        (i32.eq)
+        (if (then
+            (get_local $pos)
+            (i32.const 1)
+            (i32.sub)
+            (set_local $area)
+            (br $fi)))
+
+        (get_local $lane_length)
+        (get_local $segment_length)
+        (i32.sub)
+        (get_local $pos)
+        (get_local $segment_length)
+        (i32.rem_u)
+        (i32.add)
+        (i32.const 1)
+        (i32.sub)
+        (set_local $area))
+
+    (get_local $segment_length)
+    (get_local $pos)
+    (get_local $segment_length)
+    (i32.div_u)
+    (i32.const 1)
+    (i32.add)
+    (i32.const 4)
+    (i32.rem_u)
+    (i32.mul)
+    (call $relative_position (get_local $pseudo_rand) (i64.extend_u/i32 (get_local $area)))
+    (i32.add))
+
+  (func $fill_segment (param $ctx i32) (param $pos i32) (param $slice_index i32)
+    (local $starting_index i32)
+    (local $lane_length i32)
+    (local $segment_length i32)
+    (local $curr_offset i32)
+    (local $prev_offset i32)
+    (local $ref_offset i32)
+    (local $memory_offset i32)
+    (local $pass i32)
+    (local $i i32)
+
+    (i32.load offset=0 (get_local $ctx))
+    (tee_local $lane_length)
+    (i32.const 2)
+    (i32.shr_u)
+    (set_local $segment_length)
+
+    (i32.load offset=16 (get_local $ctx))
+    (set_local $pass)
+
+    (i32.const 0)
+    (set_local $starting_index)
+
+    (i32.load offset=16 (get_local $ctx))
+    (tee_local $pass)
+    (get_local $pos)
+    (i32.add)
+    (i32.const 0)
+    (i32.eq)
+    (if (then
+        (i32.const 2)
+        (set_local $starting_index)))
+
+    (call $generate_addresses (get_local $ctx) (get_local $pass) (get_local $slice_index))
+
+    (get_local $slice_index)
+    (get_local $segment_length)
+    (i32.mul)
+    (get_local $starting_index)
+    (i32.add)
+    (get_local $lane_length) ;; one lane, offset is module lane_length
+    (i32.rem_u)
+    (set_local $curr_offset)
+
+    (get_local $curr_offset)
+    (i32.const 1)
+    (i32.sub)
+    (set_local $prev_offset)
+
+    (get_local $curr_offset)
+    (i32.const 0)
+    (i32.eq)
+    (if (then
+        (get_local $prev_offset)
+        (get_local $lane_length)
+        (i32.add)
+        (set_local $prev_offset)))
+    
+    (get_local $starting_index)
+    (set_local $i)
+
+    (block $end
+        (loop $start
+            (get_local $i)
+            (get_local $segment_length)
+            (i32.eq)
+            (br_if $end)
+
+            (get_local $curr_offset)
+            (i32.const 0x7f)
+            (i32.and)
+            (i32.const 0)
+            (i32.eq)
+            (if (then
+              (call $generate_addresses (get_local $ctx) (get_local $pass) (get_local $slice_index))))
+
+            (get_local $ctx)
+            (get_local  $pos)
+            (i32.const 0x7f)
+            (i32.and)
+            (i32.add)
+            (i32.load offset=1054)
+            (set_local $pseudo_rand)
+
+            (get_local $curr_offset)
+            (i32.const 1)
+            (i32.eq)
+            (if (then
+                (get_local $curr_offset)
+                (i32.const 1)
+                (i32.sub)
+                (set_local $prev_offset)))
+
+            (call $reference_block_pos (get_local $lane_length) (get_local $curr_offset) (get_local $pass) (get_local $pseudo_rand))
+            (set_local $ref_offset)
+            (i32.load offset=2048 (get_local $ctx))
+            (set_local $memory_offset)
+            
+            (i32.add (get_local $memory_offset) (i32.shl (get_local $prev_offset) (i32.const 11)))
+            (i32.add (get_local $memory_offset) (i32.shl (get_local $ref_offset)  (i32.const 11)))
+            (i32.add (get_local $memory_offset) (i32.shl (get_local $curr_offset) (i32.const 11)))
+            (get_local $pass)
+            (call $fill_block)
+
+            (get_local $i)
+            (i32.const 1)
+            (i32.add)
+            (set_local $i)
+
+            (get_local $curr_offset)
+            (i32.const 1)
+            (i32.add)
+            (get_local $lane_length)
+            (i32.rem_u)
+            (set_local $curr_offset)
+
+            (get_local $prev_offset)
+            (i32.const 1)
+            (i32.add)
+            (set_local $prev_offset))))
+
+  (func $init_block (param $ptr i32)
+    (i64.store offset=0    (get_local $ptr) (i64.const 0))
+    (i64.store offset=8    (get_local $ptr) (i64.const 0))
+    (i64.store offset=16   (get_local $ptr) (i64.const 0))
+    (i64.store offset=24   (get_local $ptr) (i64.const 0))
     (i64.store offset=32   (get_local $ptr) (i64.const 0))
     (i64.store offset=40   (get_local $ptr) (i64.const 0))
     (i64.store offset=48   (get_local $ptr) (i64.const 0))
@@ -166,236 +599,7 @@
     (i64.store offset=992  (get_local $ptr) (i64.const 0))
     (i64.store offset=1000 (get_local $ptr) (i64.const 0))
     (i64.store offset=1008 (get_local $ptr) (i64.const 0))
-    (i64.store offset=1016 (get_local $ptr) (i64.const 0))
-    (i64.store offset=1024 (get_local $ptr) (i64.const 0))
-    (i64.store offset=1032 (get_local $ptr) (i64.const 0))
-    (i64.store offset=1040 (get_local $ptr) (i64.const 0))
-    (i64.store offset=1048 (get_local $ptr) (i64.const 0))
-
-    ;; current index
-    )
-
-  (func $fill_memory_blocks (param $ctx i32) (param $pass i32)
-    (local $segment i32)
-
-    (i32.const 0)
-    (set_local $segment)
-
-    (block $end
-      (loop $next_segment
-        (get_local $segment)
-        (i32.const 4)
-        (i32.eq)
-        (br_if $end)
-
-        (get_local $ctx)
-        (i32.load offset=0 (get_local $ctx))
-        (i32.const 4)
-        (i32.div_u)
-        (get_local $segment)
-        (i32.mul)
-        (get_local $segment)
-        (call $fill_segment)
-        
-        (get_local $segment)
-        (i32.const 1)
-        (i32.add)
-        (set_local $segment)
-        (br $next_segment))))
-
-  (func $relative_position (param $pseudo_rand i64) (param $area i64)
-    (result i32)
-
-    (local $j1 i64)
-    (local $j2 i64)
-    
-    (local $next_index i64)
-
-    (get_local $pseudo_rand)
-    (i64.const 32)
-    (i64.shr_u)
-    (set_local $j1)
-
-    (get_local $pseudo_rand)
-    (i64.const 0xffffffff)
-    (i64.and)
-    (set_local $j2)
-
-    (set_local $next_index (i64.shr_u (i64.mul (get_local $j1) (get_local $j1)) (i64.const 32)))
-    (set_local $next_index (i64.shr_u (i64.mul (get_local $area) (get_local $next_index)) (i64.const 32)))
-    (tee_local $next_index (i64.sub (i64.sub (get_local $area) (i64.const 1)) (get_local $next_index)))
-    (i32.wrap/i64))
-
-  (func $reference_block_pos (param $lane_length i32) (param $pos i32) (param $pass i32)
-    (result i32)
-
-    (local $start_pos i32)
-    (local $area i32)
-    (local $segment_length i32)
-    (local $pseudo_rand i64)
-
-    (get_local $lane_length)
-    (i32.const 2)
-    (i32.shr_u)
-    (set_local $segment_length)
-
-    (set_local $start_pos (i32.const 0))
-
-    ;; second pass
-    (get_local $pass)
-    (i32.const 0)
-    (i32.ne)
-    (if (then
-        (get_local $pos)
-        (get_local $segment_length)
-        (i32.div_u)
-        (i32.const 1)
-        (i32.add)
-        (i32.const 4)
-        (i32.rem_u)
-        (get_local $segment_length)
-        (i32.mul)
-        (set_local $start_pos)))
-
-    (block $fi
-        ;; if (poss === 0 && pass === 0) : CHECK poss + pass === 0, add assertion for edge case?
-        (get_local $pos)
-        (get_local $pass)
-        (i32.add)
-        (i32.const 0)
-        (i32.eq)
-        (if (then
-            (get_local $pos)
-            (i32.const 1)
-            (i32.sub)
-            (set_local $area)
-            (br $fi)))
-
-        (get_local $lane_length)
-        (get_local $segment_length)
-        (i32.sub)
-        (get_local $pos)
-        (get_local $segment_length)
-        (i32.rem_u)
-        (i32.add)
-        (i32.const 1)
-        (i32.sub)
-        (set_local $area))
-
-    (get_local $segment_length)
-    (get_local $pos)
-    (get_local $segment_length)
-    (i32.div_u)
-    (i32.const 1)
-    (i32.add)
-    (i32.const 4)
-    (i32.rem_u)
-    (i32.mul)
-    (call $relative_position (get_local $pseudo_rand) (i64.extend_u/i32 (get_local $area)))
-    (i32.add))
-
-  (func $fill_segment (param $ctx i32) (param $pos i32) (param $slice_index i32)
-    (local $starting_index i32)
-    (local $lane_length i32)
-    (local $segment_length i32)
-    (local $curr_offset i32)
-    (local $prev_offset i32)
-    (local $ref_offset i32)
-    (local $memory_offset i32)
-    (local $pass i32)
-    (local $i i32)
-
-    (i32.load offset=0 (get_local $ctx))
-    (tee_local $lane_length)
-    (i32.const 2)
-    (i32.shr_u)
-    (set_local $segment_length)
-
-    (i32.load offset=16 (get_local $ctx))
-    (set_local $pass)
-
-    (i32.const 0)
-    (set_local $starting_index)
-
-    (i32.load offset=16 (get_local $ctx))
-    (tee_local $pass)
-    (get_local $pos)
-    (i32.add)
-    (i32.const 0)
-    (i32.eq)
-    (if (then
-        (i32.const 2)
-        (set_local $starting_index)))
-
-    (get_local $slice_index)
-    (get_local $segment_length)
-    (i32.mul)
-    (get_local $starting_index)
-    (i32.add)
-    (get_local $lane_length) ;; one lane, offset is module lane_length
-    (i32.rem_u)
-    (set_local $curr_offset)
-
-    (get_local $curr_offset)
-    (i32.const 1)
-    (i32.sub)
-    (set_local $prev_offset)
-
-    (get_local $curr_offset)
-    (i32.const 0)
-    (i32.eq)
-    (if (then
-        (get_local $prev_offset)
-        (get_local $lane_length)
-        (i32.add)
-        (set_local $prev_offset)))
-    
-    (get_local $starting_index)
-    (set_local $i)
-
-    (block $end
-        (loop $start
-            (get_local $i)
-            (get_local $segment_length)
-            (i32.eq)
-            (br_if $end)
-
-            (get_local $curr_offset)
-            (i32.const 1)
-            (i32.eq)
-            (if (then
-                (get_local $curr_offset)
-                (i32.const 1)
-                (i32.sub)
-                (set_local $prev_offset)))
-
-            (call $reference_block_pos (get_local $ctx) (get_local $curr_offset) (get_local $pass))
-            (set_local $ref_offset)
-            (i32.load offset=2048 (get_local $ctx))
-            (set_local $memory_offset)
-            
-            (i32.add (get_local $memory_offset) (i32.shl (get_local $prev_offset) (i32.const 11)))
-            (i32.add (get_local $memory_offset) (i32.shl (get_local $ref_offset)  (i32.const 11)))
-            (i32.add (get_local $memory_offset) (i32.shl (get_local $curr_offset) (i32.const 11)))
-            (get_local $pass)
-            (call $fill_block)
-
-            (get_local $i)
-            (i32.const 1)
-            (i32.add)
-            (set_local $i)
-
-            (get_local $curr_offset)
-            (i32.const 1)
-            (i32.add)
-            (get_local $lane_length)
-            (i32.rem_u)
-            (set_local $curr_offset)
-
-            (get_local $prev_offset)
-            (i32.const 1)
-            (i32.add)
-            (set_local $prev_offset))))
+    (i64.store offset=1016 (get_local $ptr) (i64.const 0)))
 
   (func $fill_block (param $prev_block i32) (param $ref_block i32) (param $next_block i32) (param $xor i32)
     (local $tmp i64)
@@ -3469,8 +3673,7 @@
         (set_local $ctx2 (get_local $ctx))
         (set_local $ctx (get_local $tmp))
         (set_local $r (i32.sub (get_local $r) (i32.const 1)))
-        (br $start)
-        ))
+        (br $start)))
 
     (call $blake2b_init (get_local $ctx2) (i32.const 64))
     (call $blake2b_update (get_local $ctx2) (i32.add (get_local $ctx) (i32.const 128)) (i32.add (get_local $ctx) (i32.const 192)))
