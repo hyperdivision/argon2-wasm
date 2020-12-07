@@ -40,10 +40,10 @@
     (i32.store offset=4  (get_local $ptr) (get_local $tag_length))
     (i32.store offset=8  (get_local $ptr) (get_local $memory_blocks))
     (i32.store offset=12 (get_local $ptr) (get_local $iterations))
-    (i32.store offset=16 (get_local $ptr) (i32.const 0x10))
+    (i32.store offset=16 (get_local $ptr) (i32.const 0x13))
     (i32.store offset=20 (get_local $ptr) (i32.const 0x1))
     (i32.store offset=24 (get_local $ptr) (i32.add (get_local $ptr) (i32.const 8192)))
-
+    (i32.store offset=28 (get_local $ptr) (i32.const 0))
     ;; pseudo_rands 32..1056
     (call $init_block (i32.add (get_local $ptr) (i32.const 32)))
     
@@ -178,9 +178,21 @@
     (i32.add)
     (set_local $last_block)
 
+    (i32.load offset=8  (get_local $ctx))
+    (i32.const 1024)
+    (i32.mul)
+    (get_local $memory)
+    (i32.add)
+    (set_local $memory_end)
+
+    (i32.store8 offset=0 (get_local $hash_ctx) (i32.const 64))
+    (i32.store8 offset=1 (get_local $hash_ctx) (i32.const 0))
+    (i32.store8 offset=2 (get_local $hash_ctx) (i32.const 1))
+    (i32.store8 offset=3 (get_local $hash_ctx) (i32.const 1))
+
     (call $blake2b_init (get_local $hash_ctx) (i32.const 64))
-    (call $blake2b_update (get_local $hash_ctx) (get_local $ctx) (i32.add (i32.const 24 (get_local $ctx))))
-    (call $blake2b_update (get_local $hash_ctx) (get_local $input) (i32.add (get_local $input) (get_local $input_len)))
+    (call $blake2b_update (get_local $hash_ctx) (get_local $ctx) (i32.add (i32.const 24) (get_local $ctx)))
+    (call $blake2b_update (get_local $hash_ctx) (get_local $input) (get_local $input_len))
     (call $blake2b_final (get_local $hash_ctx))
 
     ;; clear inputs
@@ -232,7 +244,7 @@
         (i32.eq)
         (br_if $done)
 
-          (get_local $ctx)
+        (get_local $ctx)
         (get_local $pass)
         (call $fill_memory_blocks)
 
@@ -240,10 +252,8 @@
         (i32.const 1)
         (i32.add)
         (set_local $pass)
+
         (br $start)))
-
-    (call $i64.log (i64.load offset=0 (get_local $memory)))
-
 
     (get_local $memory)
     (i32.load offset=8  (get_local $ctx))
@@ -251,8 +261,6 @@
     (i32.mul)
     (i32.add)
     (set_local $memory_end)
-
-    (call $i64.log (i64.load (i32.sub (get_local $memory_end) (i32.const 1024))))
 
     ;; finalize
     (get_local $hash_ctx)
@@ -322,9 +330,6 @@
   (func $fill_memory_blocks (param $ctx i32) (param $pass i32)
     (local $segment i32)
 
-    (i32.const 0)
-    (set_local $segment)
-
     (block $end
       (loop $next_segment
         (get_local $segment)
@@ -333,11 +338,6 @@
         (br_if $end)
 
         (get_local $ctx)
-        (i32.load offset=0 (get_local $ctx))
-        (i32.const 4)
-        (i32.div_u)
-        (get_local $segment)
-        (i32.mul)
         (get_local $segment)
         (get_local $pass)
         (call $fill_segment)
@@ -349,9 +349,8 @@
         (br $next_segment))))
 
   (func $fill_initial_blocks (param $ctx i32) (param $h0 i32) (param $memory i32)
-    (i32.store (i32.const 0) (i32.add (get_local $h0) (i32.const 64)))
-    (i32.store (i32.const 0) (i32.add (get_local $h0) (i32.const 68)))
-    
+    (i64.store  offset=64 (get_local $h0) (i64.const 0))
+
     (i32.add (get_local $ctx) (i32.const 4200))
     (get_local $h0)
     (i32.add (get_local $h0) (i32.const 72))
@@ -443,7 +442,7 @@
     (get_local $lane_length)
     (i32.rem_u))
 
-  (func $fill_segment (param $ctx i32) (param $pos i32) (param $slice_index i32) (param $pass i32)
+  (func $fill_segment (param $ctx i32) (param $slice_index i32) (param $pass i32)
     (local $pseudo_rand i64)
     (local $starting_index i32)
     (local $lane_length i32)
@@ -464,7 +463,7 @@
     (set_local $starting_index)
 
     (get_local $pass)
-    (get_local $pos)
+    (get_local $slice_index)
     (i32.add)
     (i32.const 0)
     (i32.eq)
@@ -542,19 +541,11 @@
             (i32.load offset=24 (get_local $ctx))
             (set_local $memory_offset)
             
-            (call $i64.log (i64.load (i32.add (get_local $memory_offset) (i32.shl (get_local $curr_offset) (i32.const 10)))))
-            (call $i64.log (i64.load (i32.add (get_local $memory_offset) (i32.shl (get_local $ref_offset) (i32.const 10)))))
-            (call $i64.log (i64.load (i32.add (get_local $memory_offset) (i32.shl (get_local $prev_offset) (i32.const 10)))))
-            (call $i32.log (i32.const -1))
             (i32.add (get_local $memory_offset) (i32.shl (get_local $prev_offset) (i32.const 10)))
             (i32.add (get_local $memory_offset) (i32.shl (get_local $ref_offset)  (i32.const 10)))
             (i32.add (get_local $memory_offset) (i32.shl (get_local $curr_offset) (i32.const 10)))
             (get_local $pass)
             (call $fill_block)
-            (call $i64.log (i64.load (i32.add (get_local $memory_offset) (i32.shl (get_local $curr_offset) (i32.const 10)))))
-            (call $i64.log (i64.load (i32.add (get_local $memory_offset) (i32.shl (get_local $ref_offset) (i32.const 10)))))
-            (call $i64.log (i64.load (i32.add (get_local $memory_offset) (i32.shl (get_local $prev_offset) (i32.const 10)))))
-            (call $i32.log (i32.const 0))
 
             (get_local $i)
             (i32.const 1)
@@ -574,6 +565,177 @@
             (set_local $prev_offset)
 
             (br $start))))
+
+    (func $blake2b_init (param $ptr i32) (param $outlen i32)
+    ;; b array: 0-128
+    ;; (i64.store offset=0 (get_local $ptr) (i64.const 0))
+    (i64.store offset=8 (get_local $ptr) (i64.const 0))
+    (i64.store offset=16 (get_local $ptr) (i64.const 0))
+    (i64.store offset=24 (get_local $ptr) (i64.const 0))
+    (i64.store offset=32 (get_local $ptr) (i64.const 0))
+    (i64.store offset=40 (get_local $ptr) (i64.const 0))
+    (i64.store offset=48 (get_local $ptr) (i64.const 0))
+    (i64.store offset=56 (get_local $ptr) (i64.const 0))
+    (i64.store offset=64 (get_local $ptr) (i64.const 0))
+    (i64.store offset=72 (get_local $ptr) (i64.const 0))
+    (i64.store offset=80 (get_local $ptr) (i64.const 0))
+    (i64.store offset=88 (get_local $ptr) (i64.const 0))
+    (i64.store offset=96 (get_local $ptr) (i64.const 0))
+    (i64.store offset=104 (get_local $ptr) (i64.const 0))
+    (i64.store offset=112 (get_local $ptr) (i64.const 0))
+    (i64.store offset=120 (get_local $ptr) (i64.const 0))
+
+    ;; h array: 128-192, (8 * i64)
+    ;; TODO: support xor against param block and stuff, for now just xor against length
+
+    (i64.store offset=128 (get_local $ptr) (i64.xor (i64.const 0x6a09e667f3bcc908) (i64.load offset=0  (get_local $ptr))))
+    (i64.store offset=136 (get_local $ptr) (i64.xor (i64.const 0xbb67ae8584caa73b) (i64.load offset=8  (get_local $ptr))))
+    (i64.store offset=144 (get_local $ptr) (i64.xor (i64.const 0x3c6ef372fe94f82b) (i64.load offset=16 (get_local $ptr))))
+    (i64.store offset=152 (get_local $ptr) (i64.xor (i64.const 0xa54ff53a5f1d36f1) (i64.load offset=24 (get_local $ptr))))
+    (i64.store offset=160 (get_local $ptr) (i64.xor (i64.const 0x510e527fade682d1) (i64.load offset=32 (get_local $ptr))))
+    (i64.store offset=168 (get_local $ptr) (i64.xor (i64.const 0x9b05688c2b3e6c1f) (i64.load offset=40 (get_local $ptr))))
+    (i64.store offset=176 (get_local $ptr) (i64.xor (i64.const 0x1f83d9abfb41bd6b) (i64.load offset=48 (get_local $ptr))))
+    (i64.store offset=184 (get_local $ptr) (i64.xor (i64.const 0x5be0cd19137e2179) (i64.load offset=56 (get_local $ptr))))
+
+    ;; t int.64: 192-200
+    (i64.store offset=192 (get_local $ptr) (i64.const 0))
+
+    ;; c int.64: 200-208
+    (i64.store offset=200 (get_local $ptr) (i64.const 0))
+
+    ;; f int.64: 208-216
+    (i64.store offset=208 (get_local $ptr) (i64.const 0)))
+
+
+  (func $blake2b_update (export "blake2b_update") (param $ctx i32) (param $input i32) (param $input_end i32)
+    (local $t i32)
+    (local $c i32)
+    (local $i i32)
+
+    ;; load ctx.t, ctx.c
+    (set_local $t (i32.add (get_local $ctx) (i32.const 192)))
+    (set_local $c (i32.add (get_local $ctx) (i32.const 200)))
+
+    ;; i = ctx.c
+    (set_local $i (i32.wrap/i64 (i64.load (get_local $c))))
+
+    (block $end
+      (loop $start
+        (br_if $end (i32.eq (get_local $input) (get_local $input_end)))
+
+        (if (i32.eq (get_local $i) (i32.const 128))
+          (then
+            (i64.store (get_local $t) (i64.add (i64.load (get_local $t)) (i64.extend_u/i32 (get_local $i))))
+            (set_local $i (i32.const 0))
+
+            (call $blake2b_compress (get_local $ctx))
+          )
+        )
+
+        (i32.store8 (i32.add (get_local $ctx) (get_local $i)) (i32.load8_u (get_local $input)))
+        (set_local $i (i32.add (get_local $i) (i32.const 1)))
+        (set_local $input (i32.add (get_local $input) (i32.const 1)))
+
+        (br $start)
+      )
+    )
+
+    (i64.store (get_local $c) (i64.extend_u/i32 (get_local $i)))
+  )
+
+  (func $blake2b_final (export "blake2b_final") (param $ctx i32)
+    (local $t i32)
+    (local $c i32)
+    (local $i i32)
+
+    ;; load ctx.t, ctx.c
+    (set_local $t (i32.add (get_local $ctx) (i32.const 192)))
+    (set_local $c (i32.add (get_local $ctx) (i32.const 200)))
+
+    ;; ctx.t += ctx.c
+    (i64.store (get_local $t) (i64.add (i64.load (get_local $t)) (i64.load (get_local $c))))
+
+    ;; set ctx.f to last_block
+    (i64.store offset=208 (get_local $ctx) (i64.const 0xffffffffffffffff))
+
+    ;; i = ctx.c
+    (set_local $i (i32.wrap/i64 (i64.load (get_local $c))))
+
+    ;; zero out remaining, i..128
+    (block $end
+      (loop $start
+        (br_if $end (i32.eq (get_local $i) (i32.const 128)))
+        (i32.store8 (i32.add (get_local $ctx) (get_local $i)) (i32.const 0))
+        (set_local $i (i32.add (get_local $i) (i32.const 1)))
+        (br $start)
+      )
+    )
+
+    ;; ctx.c = i (for good meassure)
+    (i64.store (get_local $c) (i64.extend_u/i32 (get_local $i)))
+
+    (call $blake2b_compress (get_local $ctx))
+  )
+
+  (func $blake2b_long (export "blake2b_long") (param $ctx i32) (param $input i32) (param $input_end i32) (param $len i32) (param $out i32)
+    (local $r i32)
+    (local $ctx2 i32)
+    (local $tmp i32)
+
+    (i32.store offset=0 (i32.const 28) (get_local $len))
+    (set_local $r (i32.sub (i32.shr_u (get_local $len) (i32.const 5)) (i32.const 2)))
+    (set_local $ctx2 (i32.add (get_local $ctx) (i32.const 216)))
+
+    (i64.store (get_local $ctx) (i64.const 0))
+    (i32.store8 offset=0 (get_local $ctx) (i32.const 64))
+    (i32.store8 offset=1 (get_local $ctx) (i32.const 0))
+    (i32.store8 offset=2 (get_local $ctx) (i32.const 1))
+    (i32.store8 offset=3 (get_local $ctx) (i32.const 1))
+
+    (call $blake2b_init (get_local $ctx) (i32.const 64))
+    (call $blake2b_update (get_local $ctx) (i32.const 28) (i32.const  32))
+    (call $blake2b_update (get_local $ctx) (get_local $input) (get_local $input_end))
+    (call $blake2b_final (get_local $ctx))
+
+    (i64.store offset=0  (get_local $out) (i64.load offset=128 (get_local $ctx)))
+    (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx)))
+    (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx)))
+    (i64.store offset=24 (get_local $out) (i64.load offset=152 (get_local $ctx)))
+
+    (set_local $out (i32.add (get_local $out) (i32.const 32)))
+
+    (block $end
+      (loop $start
+        (i32.eq (get_local $r) (i32.const 0))
+        (br_if $end)
+
+        (i64.store (get_local $ctx2) (i64.const 0))
+        (i32.store8 offset=0 (get_local $ctx2) (i32.const 64))
+        (i32.store8 offset=1 (get_local $ctx2) (i32.const 0))
+        (i32.store8 offset=2 (get_local $ctx2) (i32.const 1))
+        (i32.store8 offset=3 (get_local $ctx2) (i32.const 1))
+
+        (call $blake2b_init (get_local $ctx2) (i32.const 64))
+        (call $blake2b_update (get_local $ctx2) (i32.add (get_local $ctx) (i32.const 128)) (i32.add (get_local $ctx) (i32.const 192)))
+        (call $blake2b_final (get_local $ctx2))
+
+        (i64.store offset=0  (get_local $out) (i64.load offset=128 (get_local $ctx2)))
+        (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx2)))
+        (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx2)))
+        (i64.store offset=24 (get_local $out) (i64.load offset=152 (get_local $ctx2)))
+
+        (set_local $out (i32.add (get_local $out) (i32.const 32)))
+        (set_local $r (i32.sub (get_local $r) (i32.const 1)))
+
+        (set_local $tmp (get_local $ctx2))
+        (set_local $ctx2 (get_local $ctx))
+        (set_local $ctx (get_local $tmp))
+        (br $start)))
+
+    (i64.store offset=0  (get_local $out) (i64.load offset=160 (get_local $ctx)))
+    (i64.store offset=8  (get_local $out) (i64.load offset=168 (get_local $ctx)))
+    (i64.store offset=16 (get_local $out) (i64.load offset=176 (get_local $ctx)))
+    (i64.store offset=24 (get_local $out) (i64.load offset=184 (get_local $ctx))))
 
   (func $init_block (param $ptr i32)
     (i64.store offset=0    (get_local $ptr) (i64.const 0))
@@ -3628,167 +3790,6 @@
     (set_global $register1 (get_local $b))
     (set_global $register2 (get_local $c))
     (set_global $register3 (get_local $d)))
-
-  (func $blake2b_init (param $ptr i32) (param $outlen i32)
-    ;; b array: 0-128
-    (i64.store offset=0 (get_local $ptr) (i64.const 0))
-    (i64.store offset=8 (get_local $ptr) (i64.const 0))
-    (i64.store offset=16 (get_local $ptr) (i64.const 0))
-    (i64.store offset=24 (get_local $ptr) (i64.const 0))
-    (i64.store offset=32 (get_local $ptr) (i64.const 0))
-    (i64.store offset=40 (get_local $ptr) (i64.const 0))
-    (i64.store offset=48 (get_local $ptr) (i64.const 0))
-    (i64.store offset=56 (get_local $ptr) (i64.const 0))
-    (i64.store offset=64 (get_local $ptr) (i64.const 0))
-    (i64.store offset=72 (get_local $ptr) (i64.const 0))
-    (i64.store offset=80 (get_local $ptr) (i64.const 0))
-    (i64.store offset=88 (get_local $ptr) (i64.const 0))
-    (i64.store offset=96 (get_local $ptr) (i64.const 0))
-    (i64.store offset=104 (get_local $ptr) (i64.const 0))
-    (i64.store offset=112 (get_local $ptr) (i64.const 0))
-    (i64.store offset=120 (get_local $ptr) (i64.const 0))
-
-    ;; h array: 128-192, (8 * i64)
-    ;; TODO: support xor against param block and stuff, for now just xor against length
-
-    (i64.store offset=128 (get_local $ptr) (i64.xor (i64.const 0x6a09e667f3bcc908) (i64.load (i32.const 0))))
-    (i64.store offset=136 (get_local $ptr) (i64.xor (i64.const 0xbb67ae8584caa73b) (i64.load (i32.const 8))))
-    (i64.store offset=144 (get_local $ptr) (i64.xor (i64.const 0x3c6ef372fe94f82b) (i64.load (i32.const 16))))
-    (i64.store offset=152 (get_local $ptr) (i64.xor (i64.const 0xa54ff53a5f1d36f1) (i64.load (i32.const 24))))
-    (i64.store offset=160 (get_local $ptr) (i64.xor (i64.const 0x510e527fade682d1) (i64.load (i32.const 32))))
-    (i64.store offset=168 (get_local $ptr) (i64.xor (i64.const 0x9b05688c2b3e6c1f) (i64.load (i32.const 40))))
-    (i64.store offset=176 (get_local $ptr) (i64.xor (i64.const 0x1f83d9abfb41bd6b) (i64.load (i32.const 48))))
-    (i64.store offset=184 (get_local $ptr) (i64.xor (i64.const 0x5be0cd19137e2179) (i64.load (i32.const 56))))
-
-    ;; t int.64: 192-200
-    (i64.store offset=192 (get_local $ptr) (i64.const 0))
-
-    ;; c int.64: 200-208
-    (i64.store offset=200 (get_local $ptr) (i64.const 0))
-
-    ;; f int.64: 208-216
-    (i64.store offset=208 (get_local $ptr) (i64.const 0)))
-
-
-  (func $blake2b_update (export "blake2b_update") (param $ctx i32) (param $input i32) (param $input_end i32)
-    (local $t i32)
-    (local $c i32)
-    (local $i i32)
-
-    ;; load ctx.t, ctx.c
-    (set_local $t (i32.add (get_local $ctx) (i32.const 192)))
-    (set_local $c (i32.add (get_local $ctx) (i32.const 200)))
-
-    ;; i = ctx.c
-    (set_local $i (i32.wrap/i64 (i64.load (get_local $c))))
-
-    (block $end
-      (loop $start
-        (br_if $end (i32.eq (get_local $input) (get_local $input_end)))
-
-        (if (i32.eq (get_local $i) (i32.const 128))
-          (then
-            (i64.store (get_local $t) (i64.add (i64.load (get_local $t)) (i64.extend_u/i32 (get_local $i))))
-            (set_local $i (i32.const 0))
-
-            (call $blake2b_compress (get_local $ctx))
-          )
-        )
-
-        (i32.store8 (i32.add (get_local $ctx) (get_local $i)) (i32.load8_u (get_local $input)))
-        (set_local $i (i32.add (get_local $i) (i32.const 1)))
-        (set_local $input (i32.add (get_local $input) (i32.const 1)))
-
-        (br $start)
-      )
-    )
-
-    (i64.store (get_local $c) (i64.extend_u/i32 (get_local $i)))
-  )
-
-  (func $blake2b_final (export "blake2b_final") (param $ctx i32)
-    (local $t i32)
-    (local $c i32)
-    (local $i i32)
-
-    ;; load ctx.t, ctx.c
-    (set_local $t (i32.add (get_local $ctx) (i32.const 192)))
-    (set_local $c (i32.add (get_local $ctx) (i32.const 200)))
-
-    ;; ctx.t += ctx.c
-    (i64.store (get_local $t) (i64.add (i64.load (get_local $t)) (i64.load (get_local $c))))
-
-    ;; set ctx.f to last_block
-    (i64.store offset=208 (get_local $ctx) (i64.const 0xffffffffffffffff))
-
-    ;; i = ctx.c
-    (set_local $i (i32.wrap/i64 (i64.load (get_local $c))))
-
-    ;; zero out remaining, i..128
-    (block $end
-      (loop $start
-        (br_if $end (i32.eq (get_local $i) (i32.const 128)))
-        (i32.store8 (i32.add (get_local $ctx) (get_local $i)) (i32.const 0))
-        (set_local $i (i32.add (get_local $i) (i32.const 1)))
-        (br $start)
-      )
-    )
-
-    ;; ctx.c = i (for good meassure)
-    (i64.store (get_local $c) (i64.extend_u/i32 (get_local $i)))
-
-    (call $blake2b_compress (get_local $ctx))
-  )
-
-  (func $blake2b_long (export "blake2b_long") (param $ctx i32) (param $input i32) (param $input_end i32) (param $len i32) (param $out i32)
-    (local $r i32)
-    (local $ctx2 i32)
-    (local $tmp i32)
-
-    (i32.store (get_local $input) (i32.mul (get_local $len) (i32.const 8)))
-    (set_local $r (i32.sub (i32.shr_u (get_local $len) (i32.const 5)) (i32.const 2)))
-    (set_local $ctx2 (i32.add (get_local $ctx) (i32.const 216)))
-
-    (call $blake2b_init (get_local $ctx) (i32.const 64))
-    (call $blake2b_update (get_local $ctx) (get_local $input) (get_local $input_end))
-    (call $blake2b_final (get_local $ctx))
-
-    (i64.store offset=0  (get_local $out) (i64.load offset=128 (get_local $ctx)))
-    (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx)))
-    (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx)))
-    (i64.store offset=24 (get_local $out) (i64.load offset=152 (get_local $ctx)))
-
-    (set_local $out (i32.add (get_local $out) (i32.const 32)))
-
-    (block $end
-      (loop $start
-        (i32.eq (get_local $r) (i32.const 0))
-        (br_if $end)
-
-        (call $blake2b_init (get_local $ctx2) (i32.const 64))
-        (call $blake2b_update (get_local $ctx2) (i32.add (get_local $ctx) (i32.const 128)) (i32.add (get_local $ctx) (i32.const 192)))
-        (call $blake2b_final (get_local $ctx2))
-
-        (i64.store offset=0  (get_local $out) (i64.load offset=128 (get_local $ctx2)))
-        (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx2)))
-        (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx2)))
-        (i64.store offset=24 (get_local $out) (i64.load offset=152 (get_local $ctx2)))
-
-        (set_local $out (i32.add (get_local $out) (i32.const 32)))
-        (set_local $tmp (get_local $ctx2))
-        (set_local $ctx2 (get_local $ctx))
-        (set_local $ctx (get_local $tmp))
-        (set_local $r (i32.sub (get_local $r) (i32.const 1)))
-        (br $start)))
-
-    (call $blake2b_init (get_local $ctx2) (i32.const 64))
-    (call $blake2b_update (get_local $ctx2) (i32.add (get_local $ctx) (i32.const 128)) (i32.add (get_local $ctx) (i32.const 192)))
-    (call $blake2b_final (get_local $ctx2))
-
-    (i64.store offset=0  (get_local $out) (i64.load offset=128 (get_local $ctx2)))
-    (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx2)))
-    (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx2)))
-    (i64.store offset=24 (get_local $out) (i64.load offset=152 (get_local $ctx2))))
 
   (func $blake2b_compress (export "blake2b_compress") (param $ctx i32)
     (local $v0 i64)

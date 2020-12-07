@@ -13,10 +13,8 @@ var wasm = require('./argon2')({
   }
 })
 
-var head = 64
+// var head = 64
 var freeList = []
-
-console.log(wasm)
 
 module.exports = argon2
 var BYTES_MIN = module.exports.BYTES_MIN = 16
@@ -35,25 +33,21 @@ function argon2 (input, nonce, key, ad, opts = {}) {
 
   let head = 8192
 
-  writeUInt32LE(input.length, wasm.memory, 8192)
-  wasm.memory.set(input, head)
+  writeUInt32LE(input.byteLength, wasm.memory, head)
   wasm.memory.set(input, head + 4)
-  head += input.length + 4
+  head += input.byteLength + 4
 
-  writeUInt32LE(nonce.length, wasm.memory, 8192)
-  wasm.memory.set(nonce, head)
+  writeUInt32LE(nonce.byteLength, wasm.memory, head)
   wasm.memory.set(nonce, head + 4)
-  head += nonce.length + 4
+  head += nonce.byteLength + 4
 
-  writeUInt32LE(key.length, wasm.memory, 8192)
-  wasm.memory.set(key, head)
+  writeUInt32LE(key.byteLength, wasm.memory, head)
   wasm.memory.set(key, head + 4)
-  head += key.length + 4
+  head += key.byteLength + 4
 
-  writeUInt32LE(ad.length, wasm.memory, 8192)
-  wasm.memory.set(ad, head)
+  writeUInt32LE(ad.byteLength, wasm.memory, head)
   wasm.memory.set(ad, head + 4)
-  head += ad.length + 4
+  head += ad.byteLength + 4
 
   wasm.exports.argon2_init(0, opts.memory, opts.outlen, opts.passes)
   wasm.exports.argon2_hash(0, 8192, head)
@@ -77,10 +71,10 @@ function toHex (n) {
 function writeUInt32LE (int, buf, offset) {
   if (!offset) offset = 0
 
-  buf[offset] = (int >>> 24) & 0xff
-  buf[offset + 1] = (int >>> 16) & 0xff
-  buf[offset + 2] = (int >>> 8) & 0xff
-  buf[offset + 3] = int  & 0xff
+  buf[offset] = int  & 0xff
+  buf[offset + 1] = (int >>> 8) & 0xff
+  buf[offset + 2] = (int >>> 16) & 0xff
+  buf[offset + 3] = (int >>> 24) & 0xff
 
   return buf
 }
