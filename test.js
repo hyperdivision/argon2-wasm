@@ -1,16 +1,74 @@
 const argon2 = require('./')
 
 // const input = Buffer.from('359320f8edc5c8b9148c90cab741f69f1958f1806a997d6949d953ddc26f64bfb1a35e7483f7614dff97a9f9d5528a4a305b77494846ca5099af62b2c2320fc20000000000000000', 'hex')
-const string = "a347ae92bce9f80f6f595a4480fc9c2fe7e7d7148d371e9487d75f5c23008ffae065577a928febd9b1973a5a95073acdbeb6a030cfc0d79caa2dc5cd011cef02c08da232d76d52dfbca38ca8dcbd665b17d1665f7cf5fe59772ec909733b24de97d6f58d220b20c60d7c07ec1fd93c52c31020300c6c1facd77937a597c7a6"
+const string = "e125cee61c8cb7778d9e5ad0a6f5d978ce9f84de213a8556d9ffe202020ab4a6ed9074a4eb3416f9b168f137510f3a30b70b96cbfa219ff99f6c6eaffb15c06b60e00cc2890277f0fd3c622115772f7048adaebed86e"
 const input = Buffer.from(string, 'hex')
-const nonce = Buffer.from('5541fbc995d5c197ba290346d2c559dedf405cf97e5f95482143202f9e74f5c2', 'hex')
+const nonce = Buffer.from("f1192dd5dc2368b9cd421338b22433455ee0a3699f9379a08b9650ea2c126f0d", 'hex')
 const key = Buffer.alloc(0)
 const ad = Buffer.alloc(0)
 
 
-const buf = Buffer.from(argon2(input, nonce.subarray(0, 16), key, ad, { memory: 8, passes: 5, outlen: 64}))
-console.log(buf.toString('hex'))
 
+const tests = [
+  {
+    string: "e125cee61c8cb7778d9e5ad0a6f5d978ce9f84de213a8556d9ffe202020ab4a6ed9074a4eb3416f9b168f137510f3a30b70b96cbfa219ff99f6c6eaffb15c06b60e00cc2890277f0fd3c622115772f7048adaebed86e",
+    nonce: "f1192dd5dc2368b9cd421338b22433455ee0a3699f9379a08b9650ea2c126f0d",
+    outlen: 256,
+    passes: 4,
+    memory: 766
+  },
+  {
+    string: "92263cbf6ac376499f68a4289d3bb59e5a22335eba63a32e6410249155b956b6a3b48d4a44906b18b897127300b375b8f834f1ceffc70880a885f47c33876717e392be57f7da3ae58da4fd1f43daa7e44bb82d3717af4319349c24cd31e46d295856b0441b6b289992a11ced1cc3bf3011604590244a3eb737ff221129215e4e4347f4915d41292b5173d196eb9add693be5319fdadc242906178bb6c0286c9b6ca6012746711f58c8c392016b2fdfc09c64f0f6b6ab7b",
+    nonce: "3b840e20e9555e9fb031c4ba1f1747ce25cc1d0ff664be676b9b4a90641ff194",
+    outlen: 249,
+    passes: 3,
+    memory: 7994791 >> 10,
+  },
+  {
+    string: "027b6d8e8c8c474e9b69c7d9ed4f9971e8e1ce2f6ba95048414c3970f0f09b70e3b6c5ae05872b3d8678705b7d381829c351a5a9c88c233569b35d6b0b809df44b6451a9c273f1150e2ef8a0b5437eb701e373474cd44b97ef0248ebce2ca0400e1b53f3d86221eca3f18eb45b702b9172440f774a82cbf1f6f525df30a6e293c873cce69bb078ed1f0d31e7f9b8062409f37f19f8550aae",
+    nonce: "eb2a3056a09ad2d7d7f975bcd707598f24cd32518cde3069f2e403b34bfee8a5", 
+    outlen: 64,
+    passes: 4,
+    memory: 1397645 >> 10
+  },
+  {
+    string: "4a857e2ee8aa9b6056f2424e84d24a72473378906ee04a46cb05311502d5250b82ad86b83c8f20a23dbb74f6da60b0b6ecffd67134d45946ac8ebfb3064294bc097d43ced68642bfb8bbbdd0f50b30118f5e",
+    nonce: "39d82eef32010b8b79cc5ba88ed539fbaba741100f2edbeca7cc171ffeabf258",
+    outlen: 190,
+    passes: 3,
+    memory: 1432947 >> 10,
+  },
+  {
+    string: "c7b09aec680e7b42fedd7fc792e78b2f6c1bea8f4a884320b648f81e8cf515e8ba9dcfb11d43c4aae114c1734aa69ca82d44998365db9c93744fa28b63fd16000e8261cbbe083e7e2da1e5f696bde0834fe53146d7e0e35e7de9920d041f5a5621aabe02da3e2b09b405b77937efef3197bd5772e41fdb73fb5294478e45208063b5f58e089dbeb6d6342a909c1307b3fff5fe2cf4da56bdae50848f",
+    nonce: "039c056d933b475032777edbaffac50f143f64c123329ed9cf59e3b65d3f43b6",
+    outlen: 178,
+    passes: 3,
+    memory: 4886999 >> 10,
+  },
+  {
+    string: "b540beb016a5366524d4605156493f9874514a5aa58818cd0c6dfffaa9e90205f17b",
+    nonce: "44071f6d181561670bda728d43fb79b443bb805afdebaf98622b5165e01b15fb",
+    outlen: 231,
+    passes: 2,
+    memory: 1631659 >> 10,
+  },
+   {
+    string: "a14975c26c088755a8b715ff2528d647cd343987fcf4aa25e7194a8417fb2b4b3f7268da9f3182b4cfb22d138b2749d673a47ecc7525dd15a0a3c66046971784bb63d7eae24cc84f2631712075a10e10a96b0e0ee67c43e01c423cb9c44e5371017e9c496956b632158da3fe12addecb88912e6759bc37f9af2f45af72c5cae3b179ffb676a697de6ebe45cd4c16d4a9d642d29ddc0186a0a48cb6cd62bfc3dd229d313b301560971e740e2cf1f99a9a090a5b283f35475057e96d7064e2e0fc81984591068d55a3b4169f22cccb0745a2689407ea1901a0a766eb99",
+    nonce: "3d968b2752b8838431165059319f3ff8910b7b8ecb54ea01d3f54769e9d98daf",
+    outlen: 167,
+    passes: 3,
+    memory: 1784128 >> 10,
+  }
+]
 
+for (let test of tests) {
+  const input = Buffer.from(test.string, 'hex')
+  const nonce = Buffer.from(test.nonce.slice(0, 32), 'hex')
 
+  const buf = Buffer.from(argon2(input, nonce, key, ad, test))
+  console.log(buf.toString('hex'))
+}
+
+// const buf = Buffer.from(argon2(input, nonce.subarray(0, 16), key, ad, { outlen: 256, passes: 4, memory: 766 }))
+// console.log(buf.toString('hex'))
 // d3bf532267a4c4c10475c37f5d68cb8730311bc5c9c20f9b8d441e0386e9d02b9a761f78c349f9ae7465750f6c8136d8d51aa781adb5f21e673bcf3dbe28aa3419eea9638a9eed36d5225ae6dbc374251b83320304435d1aedf1b66f01b72a0b1d11c5af166129aa002180f4b0f57877eda373e35d39fe2cb7b12fa086405941
