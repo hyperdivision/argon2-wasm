@@ -336,6 +336,10 @@
 
   (func $fill_memory_blocks (param $ctx i32) (param $pass i32)
     (local $segment i32)
+    (local $type i32)
+
+    (i32.load offset=20 (get_local $ctx))
+    (set_local $type)
 
     (block $end
       (loop $next_segment
@@ -347,6 +351,7 @@
         (get_local $ctx)
         (get_local $segment)
         (get_local $pass)
+        (get_local $type)
         (call $fill_segment)
 
         (get_local $segment)
@@ -449,7 +454,7 @@
     (get_local $lane_length)
     (i32.rem_u))
 
-  (func $fill_segment (param $ctx i32) (param $slice_index i32) (param $pass i32)
+  (func $fill_segment (param $ctx i32) (param $slice_index i32) (param $pass i32) (param $type i32)
     (local $pseudo_rand i64)
     (local $starting_index i32)
     (local $lane_length i32)
@@ -515,30 +520,6 @@
             (i32.eq)
             (br_if $end)
 
-            (get_local $i)
-            (i32.const 0x7f)
-            (i32.and)
-            (i32.const 0)
-            (i32.eq)
-            (get_local $i)
-            (i32.const 0)
-            (i32.ne)
-            (i32.and)
-            (if (then
-              (call $generate_addresses (get_local $ctx) (get_local $pass) (get_local $slice_index))))
-
-            (get_local $ctx)
-            (get_local  $curr_offset)
-            (get_local $segment_length)
-            (i32.rem_u)
-            (i32.const 0x7f)
-            (i32.and)
-            (i32.add)
-            (i32.const 8)
-            (i32.mul)
-            (i64.load offset=32)
-            (set_local $pseudo_rand)
-
             (get_local $curr_offset)
             (i32.const 1)
             (i32.eq)
@@ -547,6 +528,40 @@
                 (i32.const 1)
                 (i32.sub)
                 (set_local $prev_offset)))
+
+            (block $data_independent
+              (get_local $type)
+              (i32.const 1)
+              (i32.eq)
+              (if (then
+                (get_local $i)
+                (i32.const 0x7f)
+                (i32.and)
+                (i32.const 0)
+                (i32.eq)
+                (get_local $i)
+                (i32.const 0)
+                (i32.ne)
+                (i32.and)
+                (if (then
+                  (call $generate_addresses (get_local $ctx) (get_local $pass) (get_local $slice_index))))
+
+                (get_local $ctx)
+                (get_local  $curr_offset)
+                (get_local $segment_length)
+                (i32.rem_u)
+                (i32.const 0x7f)
+                (i32.and)
+                (i32.add)
+                (i32.const 8)
+                (i32.mul)
+                (i64.load offset=32)
+                (set_local $pseudo_rand)
+                (br $data_independent)))
+
+              (i32.add (get_local $memory_offset) (i32.shl (get_local $prev_offset) (i32.const 10)))
+              (i64.load)
+              (set_local $pseudo_rand))
 
             (call $reference_block_pos (get_local $lane_length) (get_local $curr_offset) (get_local $pass) (get_local $pseudo_rand))
             (set_local $ref_offset)
