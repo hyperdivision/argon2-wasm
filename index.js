@@ -1,4 +1,5 @@
 var assert = require('nanoassert')
+const bint = require('bint8array')
 var wasm = require('./argon2')({
   imports: {
     debug: {
@@ -13,10 +14,16 @@ var wasm = require('./argon2')({
   }
 })
 
+const TYPES = ['d', 'i', 'id']
+
 // var head = 64
 var freeList = []
 
 module.exports = argon2
+module.exports.ARGON2I = 1
+module.exports.ARGON2ID = 2
+module.exports.verify = verify
+var ARGON2_VERSION = 0x13
 var BYTES_MIN = module.exports.BYTES_MIN = 16
 var BYTES_MAX = module.exports.BYTES_MAX = 64
 var BYTES = module.exports.BYTES = 32
@@ -26,10 +33,14 @@ var KEYBYTES = module.exports.KEYBYTES = 32
 var SALTBYTES = module.exports.SALTBYTES = 16
 var PERSONALBYTES = module.exports.PERSONALBYTES = 16
 
-function argon2 (input, nonce, key, ad, opts = {}) {
+function argon2 (input, nonce, key, ad, enc, opts = {}) {
+  if (typeof enc === 'object') return argon2(input, nonce, key, ad, 'argon_string', enc)
   if (!opts.passes) opts.passes = 1024
   if (!opts.outlen) opts.outlen = 1024
   if (!opts.memory) opts.memory = 8192
+
+  if (key === null) key = Buffer.alloc(0)
+  if (ad === null) ad = Buffer.alloc(0)
 
   let head = 8192
 
@@ -49,10 +60,73 @@ function argon2 (input, nonce, key, ad, opts = {}) {
   wasm.memory.set(ad, head + 4)
   head += ad.byteLength + 4
 
-  wasm.exports.argon2_init(0, opts.memory, opts.outlen, opts.passes)
+  wasm.exports.argon2_init(0, opts.memory, opts.outlen, opts.passes, opts.type)
   wasm.exports.argon2_hash(0, 8192, head)
 
-  return wasm.memory.slice(8192, 8192 + opts.outlen)
+  const buf = wasm.memory.slice(8192, 8192 + opts.outlen)
+
+  if (enc === 'binary') return buf
+
+  if (enc === 'argon_string') {
+    const hash = {
+      type: opts.type,
+      version: ARGON2_VERSION,
+      memory: opts.memory,
+      passes: opts.passes,
+      lanes: 1,
+      salt: nonce,
+      digest: buf
+    }
+
+    return argonStringEncode(hash)
+  }
+
+  try {
+    const res = bint.toString(buf, enc)
+    return res
+  } catch (e) {
+    throw new Error(`Unsupported encoding: ${enc}`)
+  }
+}
+
+function verify (input, password, opts = {}) {
+  if (input.slice(0, 7) === '$argon2') input = argonStringDecode(input)
+
+  const res = argon2(password, input.salt, null, null, 'binary', input)
+  return Buffer.compare(res, input.digest) === 0
+}
+
+function argonStringEncode (hash) {
+  const y = TYPES[hash.type]
+  const v = hash.version
+  const m = hash.memory
+  const t = hash.passes
+  const p = hash.lanes
+
+  const salt = bint.toString(hash.salt, 'base64')
+  const digest = bint.toString(hash.digest, 'base64')
+
+  return `$argon2${y}$v=${v}$m=${m},t=${t},p=${p}$${salt}$${digest}`
+}
+
+function argonStringDecode (string) {
+  const form = /\$argon2([id]+)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$(.+)\$(.+)/
+
+  const [ _, y, v, m, t, p, s, d ] = string.match(form)
+
+  const salt = bint.fromString(s, 'base64')
+  const digest = bint.fromString(d, 'base64')
+
+  return {
+    type: TYPES.indexOf(y),
+    version: v,
+    memory: m,
+    passes: t,
+    lanes: p,
+    outlen: digest.byteLength,
+    salt,
+    digest
+  }
 }
 
 function noop () {}
