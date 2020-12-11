@@ -39,8 +39,8 @@ function argon2 (input, nonce, key, ad, enc, opts = {}) {
   if (!opts.outlen) opts.outlen = 1024
   if (!opts.memory) opts.memory = 8192
 
-  if (key === null) key = Buffer.alloc(0)
-  if (ad === null) ad = Buffer.alloc(0)
+  if (key == null) key = Buffer.alloc(0)
+  if (ad == null) ad = Buffer.alloc(0)
 
   let head = 8192
 
@@ -89,10 +89,11 @@ function argon2 (input, nonce, key, ad, enc, opts = {}) {
   }
 }
 
-function verify (input, password, opts = {}) {
+function verify (input, password, key, opts = {}) {
+  if (typeof key === 'object') return verify(input, password, null, key)
   if (input.slice(0, 7) === '$argon2') input = argonStringDecode(input)
 
-  const res = argon2(password, input.salt, null, null, 'binary', input)
+  const res = argon2(password, input.salt, key, input.assocData, 'binary', input)
   return Buffer.compare(res, input.digest) === 0
 }
 
@@ -103,17 +104,19 @@ function argonStringEncode (hash) {
   const t = hash.passes
   const p = hash.lanes
 
+  const data = hash.data ? ',data=' + bint.toString(hash.data, 'base64') : ''
   const salt = bint.toString(hash.salt, 'base64')
   const digest = bint.toString(hash.digest, 'base64')
 
-  return `$argon2${y}$v=${v}$m=${m},t=${t},p=${p}$${salt}$${digest}`
+  return `$argon2${y}$v=${v}$m=${m},t=${t},p=${p}${data}$${salt}$${digest}`
 }
 
 function argonStringDecode (string) {
-  const form = /\$argon2([id]+)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)\$(.+)\$(.+)/
+  const form = /\$argon2([id]+)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)(?:,data=(.+))?\$(.+)\$(.+)/
 
-  const [ _, y, v, m, t, p, s, d ] = string.match(form)
+  const [ _, y, v, m, t, p, ad, s, d ] = string.match(form)
 
+  const assocData = ad ? bint.fromString(ad, 'base64') : null
   const salt = bint.fromString(s, 'base64')
   const digest = bint.fromString(d, 'base64')
 
@@ -124,6 +127,7 @@ function argonStringDecode (string) {
     passes: t,
     lanes: p,
     outlen: digest.byteLength,
+    assocData,
     salt,
     digest
   }
