@@ -753,6 +753,7 @@
 
     (i32.store offset=0 (i32.const 28) (get_local $len))
     (set_local $r (i32.sub (i32.div_u (i32.add (get_local $len) (i32.const 31)) (i32.const 32)) (i32.const 2)))
+    (set_local $r (i32.mul (get_local $r) (i32.xor (i32.shr_u (get_local $r) (i32.const 31)) (i32.const 1))))
     (set_local $ctx2 (i32.add (get_local $ctx) (i32.const 216)))
 
     (i64.store (get_local $ctx) (i64.const 0))
@@ -776,6 +777,9 @@
 
     (block $end
       (loop $start
+        (i32.eq (get_local $r) (i32.const 0))
+        (br_if $end)
+
         (i64.store (get_local $ctx2) (i64.const 0))
         (i32.store8 offset=0 (get_local $ctx2) (i32.const 64))
         (i32.store8 offset=1 (get_local $ctx2) (i32.const 0))
@@ -794,9 +798,6 @@
         (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx2)))
         (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx2)))
         (i64.store offset=24 (get_local $out) (i64.load offset=152 (get_local $ctx2)))
-
-        (i32.eq (get_local $r) (i32.const 0))
-        (br_if $end)
 
         (set_local $out (i32.add (get_local $out) (i32.const 32)))
         (set_local $r (i32.sub (get_local $r) (i32.const 1)))
