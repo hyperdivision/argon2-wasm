@@ -756,17 +756,23 @@
     (set_local $r (i32.mul (get_local $r) (i32.xor (i32.shr_u (get_local $r) (i32.const 31)) (i32.const 1))))
     (set_local $ctx2 (i32.add (get_local $ctx) (i32.const 216)))
 
+    (set_local $tmp (i32.const 64))
+    (i32.lt_u (get_local $len) (i32.const 64))
+    (if (then
+      (set_local $tmp (get_local $len))))
+
     (i64.store (get_local $ctx) (i64.const 0))
-    (i32.store8 offset=0 (get_local $ctx) (i32.const 64))
+    (i32.store8 offset=0 (get_local $ctx) (get_local $tmp))
     (i32.store8 offset=1 (get_local $ctx) (i32.const 0))
     (i32.store8 offset=2 (get_local $ctx) (i32.const 1))
     (i32.store8 offset=3 (get_local $ctx) (i32.const 1))
 
-    (call $blake2b_init (get_local $ctx) (i32.const 64))
+    (call $blake2b_init (get_local $ctx) (get_local $tmp))
     (call $blake2b_update (get_local $ctx) (i32.const 28) (i32.const  32))
     (call $blake2b_update (get_local $ctx) (get_local $input) (get_local $input_end))
     (call $blake2b_final (get_local $ctx))
 
+    ;; this needs to come after
     (i64.store offset=0  (get_local $out) (i64.load offset=128 (get_local $ctx)))
     (i64.store offset=8  (get_local $out) (i64.load offset=136 (get_local $ctx)))
     (i64.store offset=16 (get_local $out) (i64.load offset=144 (get_local $ctx)))
@@ -780,17 +786,18 @@
         (i32.eq (get_local $r) (i32.const 0))
         (br_if $end)
 
+        (set_local $tmp (i32.const 64))
+        (i32.lt_u (get_local $len) (i32.const 64))
+        (if (then
+          (set_local $tmp (get_local $len))))
+
         (i64.store (get_local $ctx2) (i64.const 0))
-        (i32.store8 offset=0 (get_local $ctx2) (i32.const 64))
+        (i32.store8 offset=0 (get_local $ctx2) (get_local $tmp))
         (i32.store8 offset=1 (get_local $ctx2) (i32.const 0))
         (i32.store8 offset=2 (get_local $ctx2) (i32.const 1))
         (i32.store8 offset=3 (get_local $ctx2) (i32.const 1))
 
-        (i32.lt_u (get_local $len) (i32.const 64))
-        (if (then
-          (i32.store8 offset=0 (get_local $ctx2) (get_local $len))))
-
-        (call $blake2b_init (get_local $ctx2) (i32.const 64))
+        (call $blake2b_init (get_local $ctx2) (get_local $tmp))
         (call $blake2b_update (get_local $ctx2) (i32.add (get_local $ctx) (i32.const 128)) (i32.add (get_local $ctx) (i32.const 192)))
         (call $blake2b_final (get_local $ctx2))
 
