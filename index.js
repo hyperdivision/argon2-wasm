@@ -90,7 +90,7 @@ function argon2 (input, nonce, key, ad, enc, opts = {}) {
 }
 
 function verify (input, password, key, opts = {}) {
-  if (typeof key === 'object') return verify(input, password, null, key)
+  if (key !== null && typeof key === 'object') return verify(input, password, null, key)
   if (input.slice(0, 7) === '$argon2') input = argonStringDecode(input)
 
   const res = argon2(password, input.salt, key, input.assocData, 'binary', input)
@@ -124,10 +124,10 @@ function argonStringDecode (string) {
 
   return {
     type: TYPES.indexOf(y),
-    version: v,
-    memory: m,
-    passes: t,
-    lanes: p,
+    version: Number(v),
+    memory: Number(m),
+    passes: Number(t),
+    lanes: Number(p),
     outlen: digest.byteLength,
     assocData,
     salt,
