@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/hyperdivision/argon2-wasm#readme",
   "dependencies": {
+    "b4a": "^1.6.4",
     "bint8array": "^1.1.3",
     "nanoassert": "^2.0.0"
   },

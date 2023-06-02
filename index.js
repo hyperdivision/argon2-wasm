@@ -1,5 +1,5 @@
 var assert = require('nanoassert')
-const bint = require('bint8array')
+const b4a = require('b4a')
 var wasm = require('./argon2')({
   imports: {
     debug: {
@@ -39,8 +39,8 @@ function argon2 (input, nonce, key, ad, enc, opts = {}) {
   if (!opts.outlen) opts.outlen = 1024
   if (!opts.memory) opts.memory = 8192
 
-  if (key == null) key = Buffer.alloc(0)
-  if (ad == null) ad = Buffer.alloc(0)
+  if (key == null) key = b4a.alloc(0)
+  if (ad == null) ad = b4a.alloc(0)
 
   let head = 8192
 
@@ -82,7 +82,7 @@ function argon2 (input, nonce, key, ad, enc, opts = {}) {
   }
 
   try {
-    const res = bint.toString(buf, enc)
+    const res = b4a.toString(buf, enc)
     return res
   } catch (e) {
     throw new Error(`Unsupported encoding: ${enc}`)
@@ -94,7 +94,7 @@ function verify (input, password, key, opts = {}) {
   if (input.slice(0, 7) === '$argon2') input = argonStringDecode(input)
 
   const res = argon2(password, input.salt, key, input.assocData, 'binary', input)
-  return Buffer.compare(res, input.digest) === 0
+  return b4a.compare(res, input.digest) === 0
 }
 
 function argonStringEncode (hash) {
@@ -104,21 +104,23 @@ function argonStringEncode (hash) {
   const t = hash.passes
   const p = hash.lanes
 
-  const data = hash.data ? ',data=' + bint.toString(hash.data, 'base64') : ''
-  const salt = bint.toString(hash.salt, 'base64')
-  const digest = bint.toString(hash.digest, 'base64')
+  const data = hash.data ? ',data=' + b4a.toString(hash.data, 'base64') : ''
+  const salt = b4a.toString(hash.salt, 'base64')
+  const digest = b4a.toString(hash.digest, 'base64')
 
   return `$argon2${y}$v=${v}$m=${m},t=${t},p=${p}${data}$${salt}$${digest}`
 }
 
 function argonStringDecode (string) {
+  if (b4a.isBuffer(string)) return argonStringDecode(b4a.toString(string))
+
   const form = /\$argon2([id]+)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)(?:,data=(.+))?\$(.+)\$(.+)/
 
   const [ _, y, v, m, t, p, ad, s, d ] = string.match(form)
 
-  const assocData = ad ? bint.fromString(ad, 'base64') : null
-  const salt = bint.fromString(s, 'base64')
-  const digest = bint.fromString(d, 'base64')
+  const assocData = ad ? b4a.from(ad, 'base64') : null
+  const salt = b4a.from(s, 'base64')
+  const digest = b4a.from(d, 'base64')
 
   return {
     type: TYPES.indexOf(y),
