@@ -23,6 +23,7 @@ module.exports = argon2
 module.exports.ARGON2I = 1
 module.exports.ARGON2ID = 2
 module.exports.verify = verify
+module.exports.needsRehash = needsRehash
 var ARGON2_VERSION = 0x13
 var BYTES_MIN = module.exports.BYTES_MIN = 16
 var BYTES_MAX = module.exports.BYTES_MAX = 64
@@ -95,6 +96,11 @@ function verify (input, password, key, opts = {}) {
 
   const res = argon2(password, input.salt, key, input.assocData, 'binary', input)
   return b4a.compare(res, input.digest) === 0
+}
+
+function needsRehash (str, ops, mem, alg) {
+  const { memory, passes, type } = argonStringDecode(str)
+  return ops !== passes || mem !== memory || !!alg && alg !== type
 }
 
 function argonStringEncode (hash) {
