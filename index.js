@@ -122,7 +122,12 @@ function argonStringDecode (string) {
 
   const form = /\$argon2([id]+)\$v=(\d+)\$m=(\d+),t=(\d+),p=(\d+)(?:,data=(.+))?\$(.+)\$(.+)/
 
-  const [ _, y, v, m, t, p, ad, s, d ] = string.match(form)
+  const match = string.match(form)
+  if (match === null) {
+    throw new Error('Malformed argon2 string.')
+  }
+
+  const [ _, y, v, m, t, p, ad, s, d ] = match
 
   const assocData = ad ? b4a.from(ad, 'base64') : null
   const salt = b4a.from(s, 'base64')
